@@ -1,0 +1,49 @@
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	
+	<title>Lesson01</title>
+</head>
+
+<body>
+	<canvas id='lesson01' width="100px" height="100px" style="border: 1px solid #000000">
+	</canvas>
+
+	<!--comment-->
+	<script type="text/javascript">
+		canvas = document.getElementById("lesson01");
+		
+		context = canvas.getContext("2d");
+
+		context.fillRect(10,30,10,10)
+
+		context.fillStyle = '#FF0000';
+		context.fillRect(10,40,10,10);
+		
+		var color = '#000FF00';
+
+		for (var i = 1; i < 10; i++) {
+			context.fillRect(i,i,1,1);
+		}
+
+		var position = 0;
+		
+		function draw() {
+			context.fillStyle='#FFFFFF';
+			context.fillRect(position, position, 3, 3);
+
+			++position;
+			
+			context.fillStyle='#000000';
+			context.fillRect(position, position, 3, 3);
+		}
+
+		setInterval(draw, 5);
+
+	</script>
+</body>
+
+</html>

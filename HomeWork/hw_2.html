@@ -28,11 +28,8 @@
     // Скачиваем исходное изображение.
     var img = new Image();
     img.crossOrigin = "anonymus";
-    img.src = "https://upload.wikimedia.org/wikipedia/commons/8/87/Highimgnoise.jpg";
-
-    // Медианное значение.
-    var median = 0;
-
+    //img.src = "https://upload.wikimedia.org/wikipedia/commons/8/87/Highimgnoise.jpg";
+    img.src = img.src = "https://upload.wikimedia.org/wikipedia/commons/f/f4/Noise_salt_and_pepper.png";
     // Интерфес для доступа к пикселям.
     var img_data = new ImageData(1, 1);
 
@@ -44,15 +41,47 @@
             // Получаем все пиксели изображения.
             img_data = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-            for (var i = 0; i < img_data.data.length; i += 4) {
-                median = (img_data.data[i] + img_data.data[i + 1] + img_data.data[i + 2]) / 3;
+            var h = canvas2.height;
+            var w = canvas2.width;
 
-                img_data.data[i] = median;
-                img_data.data[i + 1] = median;
-                img_data.data[i + 2] = median;
+            var img2_data = ctx.createImageData(w, h);
+            var row_size = 7;
+            var col_size = 7;
+
+            for (var i = 0; i < h; i++) {
+                for (var j = 0; j < w; j++) {
+                    const R = [];
+                    const G = [];
+                    const B = [];
+                    const S = [];
+
+                    for (var k = 0; k < col_size; k++) {
+                        for (var l = 0; l < row_size; l++) {
+                            R.push(img_data.data[((i + l) * w + j + k) * 4]);
+                            G.push(img_data.data[((i + l) * w + j + k) * 4 + 1]);
+                            B.push(img_data.data[((i + l) * w + j + k) * 4 + 2]);
+                            S.push(img_data.data[((i + l) * w + j + k) * 4 + 3]);
+                        }
+                    }
+
+                    R.sort();
+                    G.sort();
+                    B.sort();
+                    S.sort();
+
+                    var median = Math.floor(R.length / 2);
+
+                    for (var k = 0; k < col_size; k++) {
+                        for (var l = 0; l < row_size; l++) {
+                            img2_data.data[((i + l) * w + j + k) * 4] = R[median];
+                            img2_data.data[((i + l) * w + j + k) * 4 + 1] = G[median];
+                            img2_data.data[((i + l) * w + j + k) * 4 + 2] = B[median];
+                            img2_data.data[((i + l) * w + j + k) * 4 + 3] = S[median];
+                        }
+                    }
+                }
             }
-
-            ctx2.putImageData(img_data, 0, 0, 0, 0, canvas2.width, canvas2.height);
+            ctx2.putImageData(img2_data, 0, 0, 0, 0, canvas2.width, canvas2.height);
         }
 
         var button_filter = document.getElementById('btn_filter');

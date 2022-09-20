@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Lesson03</title>
+</head>
+<body>
+<canvas id="lesson03" width="200" height="200"></canvas>
+
+<script>
+    let canvas = document.getElementById("lesson03");
+    let ctx = canvas.getContext("2d");
+
+    // 147, 123
+
+    var x1 = 147;
+    var y1 = 123;
+    var x0 = 0;
+    var y0 = 0;
+
+    var e = 0;
+    var y = 0;
+
+    ctx.fillRect(x0, y0, 1, 1);
+    for (var x = 1; x < x1; x++) {
+        e = e + 2 * (y1 - y0);
+        if (e > (x1 - x0)) {
+            e = e - 2 * (x1 - x0);
+            y += 1;
+        }
+
+        ctx.fillRect(x, y, 1, 1)
+    }
+
+</script>
+
+</body>
+</html>

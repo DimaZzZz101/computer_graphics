@@ -1,0 +1,116 @@
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+
+    <link rel="stylesheet" href="./css/workspace_style.css">
+
+    <title>HomeWork01</title>
+
+</head>
+
+<body>
+<h1>Homework 1. Object movement.</h1>
+<canvas width='400' height='300' id="hw01"></canvas>
+<script>
+    var canvas = document.getElementById('hw01');
+    var ctx = canvas.getContext('2d');
+
+    var coord_x = 1;
+    var coord_y = 1;
+
+    var speed_x = 1;
+    var speed_y = 1;
+
+    var max_speed_x = 2;
+    var max_speed_y = 2;
+
+    var circle_x = 20;
+    var circle_y = 20;
+    var radius = 10;
+
+    var colours = ['75, 0, 130', '0, 0, 255', '0, 255, 0', '255, 255, 0', '255, 127, 0', '255, 0, 0'];
+    var colour = 0;
+
+    setInterval(function () {
+
+        drawCircle(coord_x, coord_y, radius, colour)
+
+        if (coord_x >= canvas.width - circle_x) {
+            speed_x = -Math.abs(speed_x);
+            colour !== 5 ? ++colour : colour = 0
+        }
+
+        if (coord_x <= circle_x) {
+            speed_x = Math.abs(speed_x);
+            colour !== 5 ? ++colour : colour = 0
+        }
+
+        if (coord_y >= canvas.height - circle_y) {
+            speed_y = -Math.abs(speed_y);
+            colour !== 5 ? ++colour : colour = 0
+        }
+
+        if (coord_y <= circle_y) {
+            speed_y = Math.abs(speed_y);
+            colour !== 5 ? ++colour : colour = 0
+        }
+
+        coord_y = coord_y + speed_y;
+        coord_x = coord_x + speed_x;
+
+    }, 50);
+
+    function change_acceleration(code) {
+        switch (code.keyCode) {
+            // Пробел = остановка.
+            case 32:
+                speed_x = 0;
+                speed_y = 0;
+                break;
+
+            // Клавиша влево.
+            case 37:
+                if (speed_x > -max_speed_x) {
+                    speed_x = speed_x - 1;
+                }
+                break;
+
+            // Клавиша вверх.
+            case 38:
+                if (speed_y > -max_speed_y) {
+                    speed_y = speed_y - 1;
+                }
+                break;
+
+            // Клавиша вправо.
+            case 39:
+                if (speed_x < max_speed_x) {
+                    speed_x = speed_x + 1;
+                }
+                break;
+
+            // Клавиша вниз.
+            case 40:
+                if (speed_y < max_speed_y) {
+                    speed_y = speed_y + 1;
+                }
+                break;
+        }
+    }
+
+    function drawCircle(x, y, radius, i) {
+        ctx.beginPath();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.arc(0 + x, 0 + y, radius, 0, 2 * Math.PI);
+
+        ctx.fillStyle = `rgb(${colours[i]})`;
+        ctx.fill();
+
+    }
+
+    addEventListener("keydown", change_acceleration);
+
+</script>
+</body>
+</html>

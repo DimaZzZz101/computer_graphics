@@ -1,0 +1,64 @@
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+
+    <link rel="stylesheet" href="./css/workspace_style.css">
+
+    <title>HomeWork02</title>
+
+</head>
+
+<body>
+<h1>Homework 2. Median filter.</h1>
+
+<canvas width="600" , height="600" , id="original"></canvas>
+<canvas width="600" , height="600" , id="filtered"></canvas>
+
+<input type="button" class="btn" id="btn_filter" value="Filter it!">
+
+<script>
+    // Пространство для 1го изображения.
+    var canvas = document.getElementById("original");
+    var ctx = canvas.getContext("2d");
+
+    // Пространство для 2го изображения.
+    var canvas2 = document.getElementById("filtered");
+    var ctx2 = canvas2.getContext("2d");
+
+    // Скачиваем исходное изображение.
+    var img = new Image();
+    img.crossOrigin = "anonymus";
+    img.src = "https://upload.wikimedia.org/wikipedia/commons/8/87/Highimgnoise.jpg";
+
+    // Медианное значение.
+    var median = 0;
+
+    // Интерфес для доступа к пикселям.
+    var img_data = new ImageData(1, 1);
+
+    img.onload = function () {
+        // Вывод изображения в позиции (0; 0) на холсте и определение его ширины и высоты.
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        function doFilter() {
+            // Получаем все пиксели изображения.
+            img_data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+            for (var i = 0; i < img_data.data.length; i += 4) {
+                median = (img_data.data[i] + img_data.data[i + 1] + img_data.data[i + 2]) / 3;
+
+                img_data.data[i] = median;
+                img_data.data[i + 1] = median;
+                img_data.data[i + 2] = median;
+            }
+
+            ctx2.putImageData(img_data, 0, 0, 0, 0, canvas2.width, canvas2.height);
+        }
+
+        var button_filter = document.getElementById('btn_filter');
+
+        button_filter.addEventListener('click', doFilter);
+    };
+</script>
+</body>
+</html>

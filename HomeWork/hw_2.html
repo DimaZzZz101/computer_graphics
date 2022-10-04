@@ -10,9 +10,17 @@
 
 <body>
 <h1>Homework 2. Median filter.</h1>
-
+<h3>Original picture.</h3>
 <canvas width="600" , height="600" , id="original"></canvas>
-<canvas width="600" , height="600" , id="filtered"></canvas>
+
+<h3>Median filtered picture.</h3>
+<canvas width="600" , height="600" , id="median"></canvas>
+
+<h3>Average filtered picture.</h3>
+<canvas width="600" , height="600" , id="average"></canvas>
+
+<h3>Sobel filtered picture.</h3>
+<canvas width="600" , height="600" , id="sobel"></canvas>
 
 <input type="button" class="btn" id="btn_filter" value="Filter it!">
 
@@ -21,42 +29,95 @@
     var canvas = document.getElementById("original");
     var ctx = canvas.getContext("2d");
 
-    // Пространство для 2го изображения.
-    var canvas2 = document.getElementById("filtered");
+    // Пространство для 2го изображения (Медианный фильтр).
+    var canvas2 = document.getElementById("median");
     var ctx2 = canvas2.getContext("2d");
+
+    // Пространство для 3го изображения (Усредненный фильтр).
+    var canvas3 = document.getElementById("average");
+    var ctx3 = canvas3.getContext("2d");
+
+    // Пространство для 3го изображения (Усредненный фильтр).
+    var canvas4 = document.getElementById("sobel");
+    var ctx4 = canvas4.getContext("2d");
 
     // Скачиваем исходное изображение.
     var img = new Image();
+
     img.crossOrigin = "anonymus";
-    //img.src = "https://upload.wikimedia.org/wikipedia/commons/8/87/Highimgnoise.jpg";
-    img.src = img.src = "https://upload.wikimedia.org/wikipedia/commons/f/f4/Noise_salt_and_pepper.png";
+    img.src = "https://upload.wikimedia.org/wikipedia/commons/f/f4/Noise_salt_and_pepper.png";
+
     // Интерфес для доступа к пикселям.
     var img_data = new ImageData(1, 1);
 
     img.onload = function () {
-        // Вывод изображения в позиции (0; 0) на холсте и определение его ширины и высоты.
+
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-        function doFilter() {
-            // Получаем все пиксели изображения.
+
+        function sobelFilter() {
             img_data = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-            var h = canvas2.height;
-            var w = canvas2.width;
+            let h = canvas4.height;
+            let w = canvas4.width;
 
-            var img2_data = ctx.createImageData(w, h);
-            var row_size = 7;
-            var col_size = 7;
+            let img4_data = ctx.createImageData(w, h);
 
-            for (var i = 0; i < h; i++) {
-                for (var j = 0; j < w; j++) {
+            let pixels = img_data.data;
+
+            for (var y = 1; y < canvas.height - 1; y++) {
+                for (var x = 1; x < canvas.width - 1; x++) {
+                    let G = Math.ceil(Math.sqrt(Math.pow(getGx(pixels, x, y), 2) + Math.pow(getGy(pixels, x, y), 2)));
+
+                    for (var i = 0; i < 3; i++)
+                        img4_data.data[(y * canvas.width + x) * 4 + i] = G;
+                    img4_data.data[(y * canvas.width + x) * 4 + 3] = 255;
+                }
+            }
+
+            ctx4.putImageData(img4_data, 0, 0, 0, 0, canvas4.width, canvas4.height);
+        }
+
+        function getGx(pixels, x, y) {
+            return (pixels[((y + 1) * canvas.width + x - 1) * 4] +
+                    (pixels[((y + 1) * canvas.width + x) * 4]) * 2 +
+                    pixels[((y + 1) * canvas.width + x + 1) * 4]) -
+                (pixels[((y - 1) * canvas.width + x - 1) * 4] +
+                    (pixels[((y - 1) * canvas.width + x) * 4]) * 2 +
+                    pixels[((y - 1) * canvas.width + x + 1) * 4]
+                );
+        }
+
+        function getGy(pixels, x, y) {
+            return (pixels[((y - 1) * canvas.width + x + 1) * 4] +
+                    (pixels[((y) * canvas.width + x + 1) * 4]) * 2 +
+                    pixels[((y + 1) * canvas.width + x + 1) * 4]) -
+                (pixels[((y - 1) * canvas.width + x - 1) * 4] +
+                    (pixels[((y) * canvas.width + x - 1) * 4]) * 2 +
+                    pixels[((y + 1) * canvas.width + x - 1) * 4]
+                );
+        }
+
+        function averageFilter() {
+            img_data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+            let h = canvas3.height;
+            let w = canvas3.width;
+
+            let img3_data = ctx.createImageData(w, h);
+
+            let row_size = 1;
+            let col_size = 1;
+
+            for (let i = 0; i < h; i++) {
+                for (let j = 0; j < w; j++) {
                     const R = [];
                     const G = [];
                     const B = [];
                     const S = [];
 
-                    for (var k = 0; k < col_size; k++) {
-                        for (var l = 0; l < row_size; l++) {
+                    for (var k = -col_size; k <= col_size; k++) {
+                        for (var l = -row_size; l <= row_size; l++) {
                             R.push(img_data.data[((i + l) * w + j + k) * 4]);
                             G.push(img_data.data[((i + l) * w + j + k) * 4 + 1]);
                             B.push(img_data.data[((i + l) * w + j + k) * 4 + 2]);
@@ -69,24 +130,83 @@
                     B.sort();
                     S.sort();
 
-                    var median = Math.floor(R.length / 2);
+                    let summ_R = 0;
+                    let summ_G = 0;
+                    let summ_B = 0;
+                    let summ_S = 0;
 
-                    for (var k = 0; k < col_size; k++) {
-                        for (var l = 0; l < row_size; l++) {
-                            img2_data.data[((i + l) * w + j + k) * 4] = R[median];
-                            img2_data.data[((i + l) * w + j + k) * 4 + 1] = G[median];
-                            img2_data.data[((i + l) * w + j + k) * 4 + 2] = B[median];
-                            img2_data.data[((i + l) * w + j + k) * 4 + 3] = S[median];
-                        }
+                    for (el = 0; el < R.length; el++) {
+                        summ_R += R[el];
+                        summ_G += G[el];
+                        summ_B += B[el];
+                        summ_S += S[el];
                     }
+
+
+                    img3_data.data[((i + l) * w + j + k) * 4] = Math.round(summ_R / 9);
+                    img3_data.data[((i + l) * w + j + k) * 4 + 1] = Math.round(summ_G / 9);
+                    img3_data.data[((i + l) * w + j + k) * 4 + 2] = Math.round(summ_B / 9);
+                    img3_data.data[((i + l) * w + j + k) * 4 + 3] = Math.round(summ_S / 9);
+
                 }
             }
+
+            ctx3.putImageData(img3_data, 0, 0, 0, 0, canvas3.width, canvas3.height);
+        }
+
+
+        function medianFilter() {
+            // Получаем все пиксели изображения.
+            img_data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+            let h = canvas2.height;
+            let w = canvas2.width;
+
+            let img2_data = ctx.createImageData(w, h);
+
+            let row_size = 1;
+            let col_size = 1;
+
+            for (let i = 0; i < h; i++) {
+                for (let j = 0; j < w; j++) {
+                    const R = [];
+                    const G = [];
+                    const B = [];
+                    const S = [];
+
+                    for (var k = -col_size; k <= col_size; k++) {
+                        for (var l = -row_size; l <= row_size; l++) {
+                            R.push(img_data.data[((i + l) * w + j + k) * 4]);
+                            G.push(img_data.data[((i + l) * w + j + k) * 4 + 1]);
+                            B.push(img_data.data[((i + l) * w + j + k) * 4 + 2]);
+                            S.push(img_data.data[((i + l) * w + j + k) * 4 + 3]);
+                        }
+                    }
+
+                    R.sort();
+                    G.sort();
+                    B.sort();
+                    S.sort();
+
+                    let median = Math.floor(R.length / 2);
+
+                    img2_data.data[((i + l) * w + j + k) * 4] = R[median];
+                    img2_data.data[((i + l) * w + j + k) * 4 + 1] = G[median];
+                    img2_data.data[((i + l) * w + j + k) * 4 + 2] = B[median];
+                    img2_data.data[((i + l) * w + j + k) * 4 + 3] = S[median];
+                }
+            }
+
             ctx2.putImageData(img2_data, 0, 0, 0, 0, canvas2.width, canvas2.height);
         }
 
-        var button_filter = document.getElementById('btn_filter');
+        let button_filter = document.getElementById('btn_filter');
 
-        button_filter.addEventListener('click', doFilter);
+        button_filter.addEventListener('click', () => {
+            medianFilter();
+            averageFilter();
+            sobelFilter();
+        });
     };
 </script>
 </body>

@@ -9,7 +9,7 @@
 </head>
 
 <body>
-<h1>Homework 2. Median filter.</h1>
+<h1>Homework 2. Filters.</h1>
 <h3>Original picture.</h3>
 <canvas width="600" , height="600" , id="original"></canvas>
 
@@ -21,6 +21,9 @@
 
 <h3>Sobel filtered picture.</h3>
 <canvas width="600" , height="600" , id="sobel"></canvas>
+
+<h3>Gauss filtered picture.</h3>
+<canvas width="600" , height="600" , id="gauss"></canvas>
 
 <input type="button" class="btn" id="btn_filter" value="Filter it!">
 
@@ -37,9 +40,13 @@
     var canvas3 = document.getElementById("average");
     var ctx3 = canvas3.getContext("2d");
 
-    // Пространство для 3го изображения (Усредненный фильтр).
+    // Пространство для 4го изображения (Фильтр Собеля).
     var canvas4 = document.getElementById("sobel");
     var ctx4 = canvas4.getContext("2d");
+
+    // Пространство для 5го изображения (Фильтр Гаусса).
+    var canvas5 = document.getElementById("gauss");
+    var ctx5 = canvas5.getContext("2d");
 
     // Скачиваем исходное изображение.
     var img = new Image();
@@ -47,70 +54,114 @@
     img.crossOrigin = "anonymus";
     img.src = "https://upload.wikimedia.org/wikipedia/commons/f/f4/Noise_salt_and_pepper.png";
 
-    // Интерфес для доступа к пикселям.
-    var img_data = new ImageData(1, 1);
+    const height = canvas.height;
+    const width = canvas.width;
 
     img.onload = function () {
 
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, width, height);
 
+        function gaussFilter() {
+            const size = 1;
+            //const weights_matrix = [[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]];
+            const weights_matrix = [[-2, -2, -2], [-2, 9, -2], [-2, -2, -2]];
+            let weights_sum = 0;
 
-        function sobelFilter() {
-            img_data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < weights_matrix.length; i++) {
+                weights_sum = weights_matrix[i].reduce((a, b) => a + b, weights_sum);
+            }
 
-            let h = canvas4.height;
-            let w = canvas4.width;
+            let img_data = ctx.getImageData(0, 0, width, height)
+            let img5_data = ctx.createImageData(width, height)
 
-            let img4_data = ctx.createImageData(w, h);
+            for (let i = 0; i < width; i++) {
+                for (let j = 0; j < height; j++) {
+                    let R = 0;
+                    let G = 0;
+                    let B = 0;
+                    let S = 0;
 
-            let pixels = img_data.data;
+                    for (let k = -size; k <= size; k++) {
+                        for (let l = -size; l <= size; l++) {
+                            R += img_data.data[((j + l) * width + i + k) * 4] * weights_matrix[l + size][k + size];
+                            G += img_data.data[((j + l) * width + i + k) * 4 + 1] * weights_matrix[l + size][k + size];
+                            B += img_data.data[((j + l) * width + i + k) * 4 + 2] * weights_matrix[l + size][k + size];
+                            S += img_data.data[((j + l) * width + i + k) * 4 + 3] * weights_matrix[l + size][k + size];
+                        }
+                    }
 
-            for (var y = 1; y < canvas.height - 1; y++) {
-                for (var x = 1; x < canvas.width - 1; x++) {
-                    let G = Math.ceil(Math.sqrt(Math.pow(getGx(pixels, x, y), 2) + Math.pow(getGy(pixels, x, y), 2)));
-
-                    for (var i = 0; i < 3; i++)
-                        img4_data.data[(y * canvas.width + x) * 4 + i] = G;
-                    img4_data.data[(y * canvas.width + x) * 4 + 3] = 255;
+                    img5_data.data[(j * width + i) * 4] = R / weights_sum;
+                    img5_data.data[(j * width + i) * 4 + 1] = G / weights_sum;
+                    img5_data.data[(j * width + i) * 4 + 2] = B / weights_sum;
+                    img5_data.data[(j * width + i) * 4 + 3] = S / weights_sum;
                 }
             }
 
-            ctx4.putImageData(img4_data, 0, 0, 0, 0, canvas4.width, canvas4.height);
+            ctx5.putImageData(img5_data, 0, 0, 0, 0, width, height);
         }
 
-        function getGx(pixels, x, y) {
-            return (pixels[((y + 1) * canvas.width + x - 1) * 4] +
-                    (pixels[((y + 1) * canvas.width + x) * 4]) * 2 +
-                    pixels[((y + 1) * canvas.width + x + 1) * 4]) -
-                (pixels[((y - 1) * canvas.width + x - 1) * 4] +
-                    (pixels[((y - 1) * canvas.width + x) * 4]) * 2 +
-                    pixels[((y - 1) * canvas.width + x + 1) * 4]
-                );
-        }
+        function sobelFilter() {
+            function getGx(pixels, x, y) {
+                let Gx = 0;
 
-        function getGy(pixels, x, y) {
-            return (pixels[((y - 1) * canvas.width + x + 1) * 4] +
-                    (pixels[((y) * canvas.width + x + 1) * 4]) * 2 +
-                    pixels[((y + 1) * canvas.width + x + 1) * 4]) -
-                (pixels[((y - 1) * canvas.width + x - 1) * 4] +
-                    (pixels[((y) * canvas.width + x - 1) * 4]) * 2 +
-                    pixels[((y + 1) * canvas.width + x - 1) * 4]
-                );
+                for (let k = -size; k <= size; ++k) {
+                    for (let l = -size; l <= size; ++l) {
+                        Gx += pixels.data[((y + l) * width + x + k) * 4] * x_weights[l + size][k + size];
+                        Gx += pixels.data[((y + l) * width + x + k) * 4 + 1] * x_weights[l + size][k + size];
+                        Gx += pixels.data[((y + l) * width + x + k) * 4 + 2] * x_weights[l + size][k + size];
+                    }
+                }
+
+                return Gx
+            }
+
+            function getGy(pixels, x, y) {
+                let Gy = 0;
+
+                for (let k = -size; k <= size; ++k) {
+                    for (let l = -size; l <= size; ++l) {
+                        Gy += pixels.data[((y + l) * width + x + k) * 4] * y_weights[l + size][k + size];
+                        Gy += pixels.data[((y + l) * width + x + k) * 4 + 1] * y_weights[l + size][k + size];
+                        Gy += pixels.data[((y + l) * width + x + k) * 4 + 2] * y_weights[l + size][k + size];
+                    }
+                }
+
+                return Gy
+            }
+
+            let img_data = ctx.getImageData(0, 0, width, height);
+            let img4_data = ctx.createImageData(width, height);
+
+            const size = 1;
+
+            let x_weights = [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]];
+            let y_weights = [[-1, -2, -1], [0, 0, 0], [1, 2, 1]];
+
+            for (let i = 0; i < width; ++i) {
+                for (let j = 0; j < height; ++j) {
+                    let G = Math.ceil(Math.sqrt(Math.pow(getGx(img_data, i, j), 2) + Math.pow(getGy(img_data, i, j), 2)));
+
+                    for (let x = 0; x < 3; ++x) {
+                        img4_data.data[(j * width + i) * 4 + x] = G;
+                    }
+
+                    img4_data.data[(j * width + i) * 4 + 3] = 255;
+                }
+            }
+
+            ctx4.putImageData(img4_data, 0, 0, 0, 0, width, width);
         }
 
         function averageFilter() {
-            img_data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            let img_data = ctx.getImageData(0, 0, width, width);
 
-            let h = canvas3.height;
-            let w = canvas3.width;
-
-            let img3_data = ctx.createImageData(w, h);
+            let img3_data = ctx.createImageData(width, height);
 
             let row_size = 1;
             let col_size = 1;
 
-            for (let i = 0; i < h; i++) {
-                for (let j = 0; j < w; j++) {
+            for (let i = 0; i < height; i++) {
+                for (let j = 0; j < width; j++) {
                     const R = [];
                     const G = [];
                     const B = [];
@@ -118,10 +169,10 @@
 
                     for (var k = -col_size; k <= col_size; k++) {
                         for (var l = -row_size; l <= row_size; l++) {
-                            R.push(img_data.data[((i + l) * w + j + k) * 4]);
-                            G.push(img_data.data[((i + l) * w + j + k) * 4 + 1]);
-                            B.push(img_data.data[((i + l) * w + j + k) * 4 + 2]);
-                            S.push(img_data.data[((i + l) * w + j + k) * 4 + 3]);
+                            R.push(img_data.data[((i + l) * width + j + k) * 4]);
+                            G.push(img_data.data[((i + l) * width + j + k) * 4 + 1]);
+                            B.push(img_data.data[((i + l) * width + j + k) * 4 + 2]);
+                            S.push(img_data.data[((i + l) * width + j + k) * 4 + 3]);
                         }
                     }
 
@@ -130,45 +181,39 @@
                     B.sort();
                     S.sort();
 
-                    let summ_R = 0;
-                    let summ_G = 0;
-                    let summ_B = 0;
-                    let summ_S = 0;
+                    let sum_R = 0;
+                    let sum_G = 0;
+                    let sum_B = 0;
+                    let sum_S = 0;
 
-                    for (el = 0; el < R.length; el++) {
-                        summ_R += R[el];
-                        summ_G += G[el];
-                        summ_B += B[el];
-                        summ_S += S[el];
+                    for (let el = 0; el < R.length; el++) {
+                        sum_R += R[el];
+                        sum_G += G[el];
+                        sum_B += B[el];
+                        sum_S += S[el];
                     }
 
 
-                    img3_data.data[((i + l) * w + j + k) * 4] = Math.round(summ_R / 9);
-                    img3_data.data[((i + l) * w + j + k) * 4 + 1] = Math.round(summ_G / 9);
-                    img3_data.data[((i + l) * w + j + k) * 4 + 2] = Math.round(summ_B / 9);
-                    img3_data.data[((i + l) * w + j + k) * 4 + 3] = Math.round(summ_S / 9);
+                    img3_data.data[((i + l) * width + j + k) * 4] = Math.round(sum_R / 9);
+                    img3_data.data[((i + l) * width + j + k) * 4 + 1] = Math.round(sum_G / 9);
+                    img3_data.data[((i + l) * width + j + k) * 4 + 2] = Math.round(sum_B / 9);
+                    img3_data.data[((i + l) * width + j + k) * 4 + 3] = Math.round(sum_S / 9);
 
                 }
             }
 
-            ctx3.putImageData(img3_data, 0, 0, 0, 0, canvas3.width, canvas3.height);
+            ctx3.putImageData(img3_data, 0, 0, 0, 0, width, height);
         }
 
-
         function medianFilter() {
-            // Получаем все пиксели изображения.
-            img_data = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-            let h = canvas2.height;
-            let w = canvas2.width;
-
-            let img2_data = ctx.createImageData(w, h);
+            let img_data = ctx.getImageData(0, 0, width, height);
+            let img2_data = ctx.createImageData(width, height);
 
             let row_size = 1;
             let col_size = 1;
 
-            for (let i = 0; i < h; i++) {
-                for (let j = 0; j < w; j++) {
+            for (let i = 0; i < height; i++) {
+                for (let j = 0; j < width; j++) {
                     const R = [];
                     const G = [];
                     const B = [];
@@ -176,10 +221,10 @@
 
                     for (var k = -col_size; k <= col_size; k++) {
                         for (var l = -row_size; l <= row_size; l++) {
-                            R.push(img_data.data[((i + l) * w + j + k) * 4]);
-                            G.push(img_data.data[((i + l) * w + j + k) * 4 + 1]);
-                            B.push(img_data.data[((i + l) * w + j + k) * 4 + 2]);
-                            S.push(img_data.data[((i + l) * w + j + k) * 4 + 3]);
+                            R.push(img_data.data[((i + l) * width + j + k) * 4]);
+                            G.push(img_data.data[((i + l) * width + j + k) * 4 + 1]);
+                            B.push(img_data.data[((i + l) * width + j + k) * 4 + 2]);
+                            S.push(img_data.data[((i + l) * width + j + k) * 4 + 3]);
                         }
                     }
 
@@ -190,14 +235,14 @@
 
                     let median = Math.floor(R.length / 2);
 
-                    img2_data.data[((i + l) * w + j + k) * 4] = R[median];
-                    img2_data.data[((i + l) * w + j + k) * 4 + 1] = G[median];
-                    img2_data.data[((i + l) * w + j + k) * 4 + 2] = B[median];
-                    img2_data.data[((i + l) * w + j + k) * 4 + 3] = S[median];
+                    img2_data.data[((i + l) * width + j + k) * 4] = R[median];
+                    img2_data.data[((i + l) * width + j + k) * 4 + 1] = G[median];
+                    img2_data.data[((i + l) * width + j + k) * 4 + 2] = B[median];
+                    img2_data.data[((i + l) * width + j + k) * 4 + 3] = S[median];
                 }
             }
 
-            ctx2.putImageData(img2_data, 0, 0, 0, 0, canvas2.width, canvas2.height);
+            ctx2.putImageData(img2_data, 0, 0, 0, 0, width, height);
         }
 
         let button_filter = document.getElementById('btn_filter');
@@ -206,6 +251,7 @@
             medianFilter();
             averageFilter();
             sobelFilter();
+            gaussFilter();
         });
     };
 </script>

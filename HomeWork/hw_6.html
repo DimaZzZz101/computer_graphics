@@ -70,7 +70,7 @@
     let x_coords = [];
     let y_coords = [];
 
-    function CiriusBlack(x1, y1, x2, y2) {
+    function CyrusBack(x1, y1, x2, y2) {
         let t = 0;
 
         let ax = 0;
@@ -138,7 +138,7 @@
                     y0 = event.offsetY;
 
                 } else {
-                    CiriusBlack(x0, y0, event.offsetX, event.offsetY);
+                    CyrusBack(x0, y0, event.offsetX, event.offsetY);
 
                     x0 = -1;
                     y0 = -1;
@@ -151,8 +151,10 @@
         if (event.code === "Enter") {
             if (draw_figure && global_x0 !== -1 && global_y0 !== -1) {
                 DrawLine(global_x0, global_y0, x0, y0);
+                
                 x0 = -1;
                 y0 = -1;
+
                 draw_figure = false;
             }
         }

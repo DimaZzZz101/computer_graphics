@@ -1,0 +1,154 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <link rel="stylesheet" href="./css/workspace_style.css">
+
+    <title>HomeWork05</title>
+</head>
+
+<body>
+<h1>Homework 5. Sutherland-Cohen algorithm.</h1>
+
+<canvas width="600" height="600" id="hw05"></canvas>
+
+<script>
+    var canvas = document.getElementById('hw05');
+    var ctx = canvas.getContext('2d');
+
+    function DrawLine(x1, y1, x2, y2) {
+        var inv = Math.abs(x2 - x1) < Math.abs(y2 - y1);
+
+        if (inv) {
+            [x1, y1] = [y1, x1];
+            [x2, y2] = [y2, x2];
+        }
+
+        if (x1 > x2) {
+            [x1, x2] = [x2, x1];
+            [y1, y2] = [y2, y1];
+        }
+
+        var dx = x2 - x1;
+        var dy = Math.abs(y2 - y1);
+
+        var e = dx / 2;
+
+        var y = y1;
+        var y_shift = 1;
+
+        if (y1 >= y2) {
+            y_shift = -1;
+        }
+
+        for (var x = x1; x <= x2; ++x) {
+            if (inv) {
+                ctx.fillRect(y, x, 2, 2);
+            } else {
+                ctx.fillRect(x, y, 2, 2);
+            }
+
+            e -= dy;
+            if (e < 0) {
+                e += dx;
+                y += y_shift;
+            }
+        }
+    }
+
+    let x_1 = -1;
+    let y_1 = -1;
+
+    let x_2 = -1;
+    let y_2 = -1;
+
+    function GetPart(x, y) {
+        let result = 0;
+
+        if (x < x_1) {
+            result += 2;
+        } else if (x > x_2) {
+            result += 1;
+        }
+
+        if (y < y_1) {
+            result += 8;
+        } else if (y > y_2) {
+            result += 4;
+        }
+
+        return result;
+    }
+
+    function GetMid(x_1, y_1, x_2, y_2) {
+        return [(x_1 + x_2) / 2, (y_1 + y_2) / 2];
+    }
+
+    function GetLen(x_1, y_1, x_2, y_2) {
+        return Math.sqrt(Math.pow(x_1 - x_2, 2) + Math.pow(y_1 - y_2, 2));
+    }
+
+    function CohenSutherland(x_1_line, y_1_line, x_2_line, y_2_line) {
+        if (GetLen(x_1_line, y_1_line, x_2_line, y_2_line) < 2) {
+            return;
+        }
+
+        let p0 = GetPart(x_1_line, y_1_line);
+        let p1 = GetPart(x_2_line, y_2_line);
+
+        if (p0 === 0 && p1 === 0) {
+            DrawLine(x_1_line, y_1_line, x_2_line, y_2_line);
+
+        } else if ((p0 & p1) === 0) {
+            coords = GetMid(x_1_line, y_1_line, x_2_line, y_2_line);
+
+            CohenSutherland(x_1_line, y_1_line, coords[0], coords[1]);
+            CohenSutherland(coords[0], coords[1], x_2_line, y_2_line);
+        }
+    }
+
+    let x_1_line = -1;
+    let y_1_line = -1;
+
+    let x_2_line = -1;
+    let y_2_line = -1;
+
+    document.addEventListener("click", (event) => {
+        if (event.button === 0) {
+            if (x_1 === -1 && y_1 === -1) {
+                x_1 = event.offsetX;
+                y_1 = event.offsetY;
+
+            } else if (x_2 === -1 && y_2 === -1) {
+                x_2 = event.offsetX;
+                y_2 = event.offsetY;
+
+                if (y_1 > y_2) {
+                    [y_1, y_2] = [y_2, y_1];
+                }
+
+                ctx.strokeRect(x_1, y_1, Math.abs(x_1 - x_2), Math.abs(y_1 - y_2));
+
+            } else if (x_1_line === -1 && y_1_line === -1) {
+                x_1_line = event.offsetX;
+                y_1_line = event.offsetY;
+
+            } else if (x_2_line === -1 && y_2_line === -1) {
+                x_2_line = event.offsetX;
+                y_2_line = event.offsetY;
+
+                CohenSutherland(x_1_line, y_1_line, x_2_line, y_2_line);
+
+                x_1_line = -1;
+                y_1_line = -1;
+
+                x_2_line = -1;
+                y_2_line = -1;
+            }
+        }
+    });
+</script>
+
+</body>
+</html>

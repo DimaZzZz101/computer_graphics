@@ -1,0 +1,192 @@
+<html lang="en">
+
+<head>
+    <meta charSet="UTF-8">
+
+    <link rel="stylesheet" href="./css/workspace_style.css">
+
+    <title>HomeWork08</title>
+</head>
+
+<body>
+<h1>Homework 8. Interpolation.</h1>
+
+<canvas width="600" height="600" id="hw08"></canvas>
+
+<h3 id="enter"> Press ENTER to draw/reset.</h3>
+
+
+<script>
+    class P {
+        constructor(p_x, p_y) {
+            this.X = p_x;
+            this.Y = p_y
+        }
+
+        floor() {
+            return new P(Math.floor(this.X), Math.floor(this.Y));
+        }
+
+        sub(other_p) {
+            return new P(this.X - other_p.X, this.Y - other_p.Y);
+        }
+
+        length() {
+            return Math.sqrt(this.X * this.X + this.Y * this.Y)
+        }
+
+        is_equal(other_p) {
+            return this.X === other_p.X && this.Y === other_p.Y;
+        }
+    }
+</script>
+
+<script>
+    function DrawBresenhamLine(p0, p1) {
+        p0 = p0.floor();
+        p1 = p1.floor();
+
+        if (p0.is_equal(p1)) {
+            return;
+        }
+
+        let dx = Math.abs(p1.X - p0.X);
+        let dy = Math.abs(p1.Y - p0.Y);
+
+        let x_shift = 1;
+        let y_shift = 1;
+
+        if (p0.X >= p1.X) {
+            x_shift = -1;
+        }
+
+        if (p0.Y >= p1.Y) {
+            y_shift = -1;
+        }
+
+        let err = dx - dy;
+
+        let x = p0.X;
+        let y = p0.Y;
+
+        while (true) {
+            ctx.fillRect(x, y, 2, 2);
+
+            if ((x === p1.X) && (y === p1.Y)) {
+                break;
+            }
+
+            let e2 = err;
+
+            if (e2 > -dy) {
+                err -= dy;
+                x += x_shift;
+            }
+
+            if (e2 < dx) {
+                err += dx;
+                y += y_shift;
+            }
+        }
+    }
+
+    function CurveDist(start_p, mid_p, end_p) {
+        let N = mid_p.sub(end_p).length();
+
+        let start_mid_d = start_p.sub(mid_p);
+        let start_end_d = start_p.sub(end_p);
+
+        let up = (start_mid_d.X * start_end_d.Y - start_mid_d.Y * start_end_d.X);
+        let down = (Math.pow(start_end_d.X, 2) - Math.pow(start_end_d.Y, 2));
+
+        let k = up / down;
+
+        return Math.abs(k * N);
+    }
+
+    function DrawCurvePart(start_p, mid_p, end_p) {
+        if (CurveDist(start_p, mid_p, end_p) < 1) {
+            DrawBresenhamLine(start_p, end_p);
+            return;
+        }
+
+        let mid_p1 = new P((start_p.X + mid_p.X) * 0.5, (start_p.Y + mid_p.Y) * 0.5);
+        let mid_p2 = new P((end_p.X + mid_p.X) * 0.5, (end_p.Y + mid_p.Y) * 0.5);
+        let edge_p = new P((mid_p1.X + mid_p2.X) * 0.5, (mid_p1.Y + mid_p2.Y) * 0.5);
+
+        DrawCurvePart(start_p, mid_p1, edge_p);
+        DrawCurvePart(edge_p, mid_p2, end_p);
+    }
+
+    function GetCoefficients(points, b0) {
+        let b = [b0];
+
+        for (let i = 1; i < points.length; i++) {
+            b.push(2 * (points[i - 1].Y - points[i].Y) / (points[i - 1].X - points[i].X) - b[i - 1]);
+        }
+
+        return b;
+    }
+
+    function GetIntersection(points) {
+        let coefficients = GetCoefficients(points, 0);
+
+        let midPoints = [];
+
+        for (let i = 1; i < points.length; i++) {
+            let d0 = points[i - 1].Y - coefficients[i - 1] * points[i - 1].X;
+            let d1 = points[i].Y - coefficients[i] * points[i].X;
+
+            let xM = (d0 - d1) / (coefficients[i] - coefficients[i - 1]);
+            let yM = d0 + coefficients[i - 1] * xM;
+
+            midPoints.push(new P(xM, yM));
+        }
+
+        return midPoints
+    }
+
+    function DrawInterpolation(points) {
+        let midPoints = GetIntersection(points);
+
+        for (let i = 0; i < midPoints.length; ++i) {
+            DrawCurvePart(points[i], midPoints[i], points[i + 1]);
+        }
+    }
+</script>
+
+
+<script>
+    let canvas = document.getElementById("hw08");
+    let ctx = canvas.getContext("2d");
+
+    let points_arr = [];
+    let flag = false;
+
+    document.addEventListener("click", (event) => {
+        if (event.button === 0) {
+            if (!flag) {
+                let rect = canvas.getBoundingClientRect();
+                let point = new P(event.clientX - rect.left, event.clientY - rect.top);
+                ctx.fillRect(point.X - 2, point.Y - 2, 3, 3);
+                points_arr.push(point);
+            }
+        }
+    });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.code === "Enter") {
+            if (!flag) {
+                DrawInterpolation(points_arr);
+                points_arr = [];
+            } else {
+                ctx.clearRect(0, 0, canvas.width, canvas.height)
+            }
+
+            flag = !flag;
+        }
+    });
+</script>
+
+</body>
+</html>
